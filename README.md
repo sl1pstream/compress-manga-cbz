@@ -1,3 +1,5 @@
+> **DISCLAIMER:** While there is (clearly) no harmful code in this script, which can be verified by reading through the python script, it is the responsibility of the end user to verify that for themselves. There are plenty of bad actors in the scene, especially with python scripts. **Never run a script you found on the internet unless you understand what the code actually does. Even if the script has comments, it should still not be blindly trusted.**
+
 # CBZ Compression Tool
 
 A Python utility for batch compressing CBZ (Comic Book ZIP) files with interactive GUI dialogs and intelligent image optimization.
@@ -28,6 +30,8 @@ python3 compress_cbz.py
 2. Select output directory (must be different from source. New folder created will have the same name as the original, so this avoids conflicts or loss of data)
 3. Review total size and enter target size in MB
 4. Script compresses all CBZ files to target size (roughly)
+
+*This is currently very roughly done. Please be aware that it isn't easy to get the exact target size. If you have a better method that gets the final resulting total size closer to the target size, open a pull request*
 
 ### Compression Guidelines
 The script includes recommended compression target sizes based on the original total size (total size *not* including non-cbz files):
