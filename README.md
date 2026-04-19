@@ -1,5 +1,7 @@
 > **DISCLAIMER:** While there is (clearly) no harmful code in this script, which can be verified by reading through the python script, it is the responsibility of the end user to verify that for themselves. There are plenty of bad actors in the scene, especially with python scripts. **Never run a script you found on the internet unless you understand what the code actually does. Even if the script has comments, it should still not be blindly trusted.**
 
+[Click here for the latest changes to compress_cbz.py](https://github.com/sl1pstream/compress-manga-cbz/blob/main/Changelog.md)
+
 # CBZ Compression Tool
 
 A Python utility for batch compressing CBZ (Comic Book ZIP) files with interactive GUI dialogs and intelligent image optimization.
