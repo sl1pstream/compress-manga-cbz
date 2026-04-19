@@ -33,6 +33,10 @@ python3 compress_cbz.py
 
 *This is currently very roughly done. Please be aware that it isn't easy to get the exact target size. If you have a better method that gets the final resulting total size closer to the target size, open a pull request*
 
+### Example Run
+<img width="534" height="503" alt="image" src="https://github.com/user-attachments/assets/c56f7498-30ee-484a-8bb8-3b195e2a6e58" />
+
+
 ### Compression Guidelines
 The script includes recommended compression target sizes based on the original total size (total size *not* including non-cbz files):
 - ≤ 600MB: Don't compress
@@ -40,5 +44,11 @@ The script includes recommended compression target sizes based on the original t
 - ≤ 2.5GB: Target 1024MB
 - ≤ 3.5GB: Target 1500MB
 - ≤ 4.5GB: Target 2048MB
+- ≤ 5.5GB: Target 2500MB
+- ≤ 6.5GB: Target 3072MB
+- ≤ 7.5GB: Target 3500MB
+- ≤ 8.5GB: Target 4069MB
+- ≤ 9.5GB: Target 4500MB
+
 
 (these are also included at the top of the script file itself)
