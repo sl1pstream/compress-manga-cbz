@@ -139,7 +139,6 @@ def run_pass(cbz_files, output_folder, ratio):
 
 
 def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*1024):
-    print("Scanning image sizes...")
     total_image_size = compute_total_image_size(cbz_files)
 
     if total_image_size == 0:
@@ -204,12 +203,34 @@ def main():
     total_size_mb = total_size_bytes / (1000 * 1000)
     total_size_gb = total_size_bytes / (1000 * 1000 * 1000)
 
+    # Calculate default target based on compression guide
+    if total_size_mb <= 600:
+        default_target = str(int(total_size_mb))  # Don't compress
+    elif total_size_mb <= 1500:
+        default_target = "500"
+    elif total_size_mb <= 2500:
+        default_target = "1024"
+    elif total_size_mb <= 3500:
+        default_target = "1500"
+    elif total_size_mb <= 4500:
+        default_target = "2048"
+    elif total_size_mb <= 5500:
+        default_target = "2500"
+    elif total_size_mb <= 6500:
+        default_target = "3072"
+    elif total_size_mb <= 7500:
+        default_target = "3500"
+    elif total_size_mb <= 8500:
+        default_target = "4096"
+    elif total_size_mb <= 9500:
+        default_target = "4500"
+    else:
+        default_target = str(int(total_size_mb * 0.5))  # 50% for very large files
+
     if total_size_mb >= 1000:
         size_display = f"{total_size_gb:.2f} GB"
-        default_target = str(int(total_size_mb * 0.5))
     else:
         size_display = f"{total_size_mb:.2f} MB"
-        default_target = str(int(total_size_mb * 0.5))
 
     target = kdialog_input(
         "Target Size",
