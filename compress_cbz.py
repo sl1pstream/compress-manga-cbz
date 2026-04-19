@@ -9,11 +9,11 @@ from pathlib import Path
 from PIL import Image
 import io
 
-# COMPRESSION GUIDE (by size) # 
-# ≤ 600MB: Don't compress 
-# ≤ 1.5GB: 500MB 
-# ≤ 2.5GB: 1024MB 
-# ≤ 3.5GB: 1500MB 
+# COMPRESSION GUIDE (by size) #
+# ≤ 600MB: Don't compress
+# ≤ 1.5GB: 500MB
+# ≤ 2.5GB: 1024MB
+# ≤ 3.5GB: 1500MB
 # ≤ 4.5GB: 2048MB
 # ≤ 5.5GB: 2500MB
 # ≤ 6.5GB: 3072MB
@@ -47,7 +47,7 @@ def kdialog_input(title, message, default=""):
 # ---------------- IMAGE COMPRESSION ---------------- #
 
 def compress_image_to_size(img, target_size):
-    low, high = 10, 95
+    low, high = 10, 100
     best_data = None
 
     while low <= high:
@@ -147,6 +147,7 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
     base_ratio = target_size / total_image_size
     current_ratio = base_ratio
     pass_num = 0
+    previous_size = None
 
     while True:
         pass_num += 1
@@ -158,11 +159,31 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
 
         print(f"Result: {final_size/1e6:.2f} MB | Target: {target_size/1e6:.2f} MB | Diff: {diff/1e6:+.2f} MB")
 
+        # Check for stagnation (if this isn't the first pass)
+        if previous_size is not None:
+            size_change = abs(final_size - previous_size)
+            
+            # If size changed less than 5MB between passes
+            if size_change < 5 * 1024 * 1024:
+                print(f"⚠ Stagnant ({size_change/1e6:.2f}MB change between passes)")
+                
+                # If we're still far from target, we've hit a ceiling
+                if abs(diff) > tolerance:
+                    print(f"✓ Cannot reach target. Best achievable: {final_size/1e6:.2f}MB")
+                    return
+                else:
+                    # Close enough to target
+                    print("✓ Within tolerance. Done.")
+                    return
+
         # Accept only if at or below target, within tolerance
         if diff <= 0 and abs(diff) <= tolerance:
             print("✓ Within tolerance. Done.")
             return
 
+        # Save current size for next iteration
+        previous_size = final_size
+        
         # Dynamically adjust ratio based on how far off we are
         adjustment_factor = target_size / final_size
         current_ratio *= adjustment_factor
