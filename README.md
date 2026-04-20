@@ -31,9 +31,7 @@ python3 compress_cbz.py
 1. Select source folder containing CBZ files
 2. Select output directory (must be different from source. New folder created will have the same name as the original, so this avoids conflicts or loss of data)
 3. Review total size and enter target size in MB
-4. Script compresses all CBZ files to target size (roughly)
-
-*This is currently very roughly done. Please be aware that it isn't easy to get the exact target size. If you have a better method that gets the final resulting total size closer to the target size, open a pull request*
+4. Script compresses all CBZ files to target size (within 50MB but not exceeding)
 
 ### Example Run
 <img width="534" height="503" alt="image" src="https://github.com/user-attachments/assets/c56f7498-30ee-484a-8bb8-3b195e2a6e58" />
