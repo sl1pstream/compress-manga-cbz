@@ -34,7 +34,7 @@ python3 compress_cbz.py
 4. Script compresses all CBZ files to target size (within 50MB but not exceeding)
 
 ### Example Run
-<img width="534" height="503" alt="image" src="https://github.com/user-attachments/assets/c56f7498-30ee-484a-8bb8-3b195e2a6e58" />
+<img width="488" height="261" alt="image" src="https://github.com/user-attachments/assets/a4d335c9-4936-42c5-b179-66e6d7b0275b" />
 
 
 ### Compression Guidelines
