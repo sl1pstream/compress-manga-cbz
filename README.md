@@ -18,7 +18,7 @@ You're not gonna notice that small loss in image quality unless you zoom in a to
 
 - Automatic size calculation and compression ratio determination (roughly)
 - Preserves non-CBZ files in output directory (i.e. series info for Komga)
-- Progress tracking in-terminal during compressio
+- Progress tracking in-terminal during compression
   
 ## Usage
 
