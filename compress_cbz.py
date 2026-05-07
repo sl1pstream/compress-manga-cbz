@@ -272,6 +272,13 @@ def main():
 
     target_size_bytes = target_size_mb * 1000 * 1000
 
+    # Check if target is larger than original
+    if target_size_bytes > total_size_bytes:
+        print(f"\n⚠ Error: Target size ({target_size_mb:.2f} MB) is larger than original size ({total_size_mb:.2f} MB).")
+        print("This script is only meant for compression (you wouldn't even get any extra quality).")
+        print("Please enter a target size smaller than the original.\n")
+        sys.exit(1)
+
     output_folder = Path(save_dir) / Path(source_folder).name
 
     dynamic_compress(
