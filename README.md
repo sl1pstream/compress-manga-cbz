@@ -32,6 +32,9 @@ python3 compress_cbz.py
 2. Select output directory (must be different from source. New folder created will have the same name as the original, so this avoids conflicts or loss of data)
 3. Review total size and enter target size in MB
 4. Script compresses all CBZ files to target size (within 50MB but not exceeding)
+5. If the resulting total size from a pass does not differ from the previous pass by > 5MB, and is not within 50MB of the target size, the script will stop with a warning. This is a failsafe to stop the script from trying indefinitely
+
+_While stagnation causing the result not being within the target window is a very rare case as is, I am working on adding additional changes that should handle these edge cases in theory, but I don't have an actual scenario for that section of new code to be tested_
 
 ### Example Run
 <img width="488" height="261" alt="image" src="https://github.com/user-attachments/assets/a4d335c9-4936-42c5-b179-66e6d7b0275b" />
