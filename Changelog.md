@@ -1,3 +1,7 @@
+## 2026-05-08
+- Fixed logic error with stagnation
+- Added option to retry compression post-stagnation using different raitio, including some randomization so no two second (third, fourth, etc) attempts for the same set of cbz files will only yield a single result. This further decreases the chance of the script quitting due to stagnation where it should should hit the target size/window in theory
+---
 ## 2026-05-07
 - Script no longer allows user to enter a target size larger than the original total size. No idea why someone would even think this is a good idea, but now you can't
 ---
