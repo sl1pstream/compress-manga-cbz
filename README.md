@@ -9,7 +9,7 @@ A Python utility for batch compressing CBZ (Comic Book ZIP) files with interacti
 ## Why?
 You're not gonna notice that small loss in image quality unless you zoom in a ton, or unless you're reading manga on your TV. Why not save some space?
 
-## OS Requirements
+## Requirements
 
 - **Linux** (might work with WSL/WSL2 but primarily tested on Linux)
 - `kdialog` for GUI dialogs (standard on KDE)
