@@ -9,6 +9,7 @@ import random
 from pathlib import Path
 from PIL import Image
 import io
+from multiprocessing import Pool, cpu_count
 
 # COMPRESSION GUIDE (by size) #
 # ≤ 600MB: Don't compress
@@ -125,6 +126,12 @@ def compress_cbz_per_image(input_path, output_path, global_ratio):
                     zout.writestr(item, data)
 
 
+# ---------------- MULTIPROCESSING FIX ---------------- #
+
+def _cbz_worker(args):
+    return compress_cbz_per_image(*args)
+
+
 # ---------------- PASS SYSTEM ---------------- #
 
 def run_pass(cbz_files, output_folder, ratio):
@@ -133,12 +140,22 @@ def run_pass(cbz_files, output_folder, ratio):
     output_folder.mkdir(parents=True)
 
     total_files = len(cbz_files)
-    for idx, cbz in enumerate(cbz_files, 1):
-        out = output_folder / cbz.name
-        compress_cbz_per_image(cbz, out, ratio)
-        print(f"\rProgress: {idx}/{total_files}", end='', flush=True)
-    
-    print()  # New line after progress
+
+    jobs = [
+        (cbz, output_folder / cbz.name, ratio)
+        for cbz in cbz_files
+    ]
+
+    cbz_worker_count = max(1, cpu_count() // 2)
+
+    with Pool(processes=cbz_worker_count) as pool:
+        for idx, _ in enumerate(
+            pool.imap_unordered(_cbz_worker, jobs),
+            1
+        ):
+            print(f"\rProgress: {idx}/{total_files}", end='', flush=True)
+
+    print()
 
     total = 0
     for f in output_folder.glob("*.cbz"):
@@ -148,78 +165,42 @@ def run_pass(cbz_files, output_folder, ratio):
 
 
 def calculate_next_ratio(attempt_history, target_size, add_randomization=False):
-    """Calculate next attempt's starting ratio based on trajectory analysis.
-    
-    Args:
-        attempt_history: List of attempt trajectories, each containing:
-                        {'first_pass': (ratio, size), 'final_pass': (ratio, size), 'trajectory': [(ratio, size), ...]}
-        target_size: Target size in bytes
-        add_randomization: If True, adds ±5% randomization to avoid getting stuck in same pattern
-    
-    Returns:
-        Suggested starting ratio for next attempt, or None if converged
-    """
     if not attempt_history:
         return None
-    
-    # Check for convergence across attempts
+
     if len(attempt_history) >= 3:
         recent_final_sizes = [attempt['final_pass'][1] for attempt in attempt_history[-3:]]
         size_variance = max(recent_final_sizes) - min(recent_final_sizes)
-        if size_variance < 10 * 1024 * 1024:  # Less than 10MB variance
-            return None  # Signal convergence
-    
+        if size_variance < 10 * 1024 * 1024:
+            return None
+
     last_attempt = attempt_history[-1]
     first_ratio, first_size = last_attempt['first_pass']
     final_ratio, final_size = last_attempt['final_pass']
-    
-    # Analyze the trajectory
-    trajectory = last_attempt['trajectory']
+
     first_diff = first_size - target_size
     final_diff = final_size - target_size
-    
-    # Calculate how much the attempt converged
+
     convergence = abs(first_diff) - abs(final_diff)
-    
-    # Determine adjustment based on first pass result and trajectory
-    if abs(final_diff) < 50 * 1024 * 1024:  # Within 50MB of target
-        # Very close - make small adjustment to first pass ratio
-        if final_diff > 0:  # Slightly over
-            adjustment = 0.95
-        else:  # Slightly under
-            adjustment = 1.05
-    elif convergence > 0:  # Trajectory was converging well
-        # Good convergence - adjust first pass based on how far off it was
-        if first_diff > 0:  # Started over target
-            # Reduce starting ratio proportionally
-            adjustment = 0.85 if abs(first_diff) > 100 * 1024 * 1024 else 0.92
-        else:  # Started under target
-            adjustment = 1.15 if abs(first_diff) > 100 * 1024 * 1024 else 1.08
-    else:  # Poor convergence or diverging
-        # Make more aggressive adjustment
-        if final_diff > 0:
-            adjustment = 0.80
-        else:
-            adjustment = 1.20
-    
+
+    if abs(final_diff) < 50 * 1024 * 1024:
+        adjustment = 0.95 if final_diff > 0 else 1.05
+    elif convergence > 0:
+        adjustment = 0.85 if abs(first_diff) > 100 * 1024 * 1024 else 0.92
+    else:
+        adjustment = 0.80 if final_diff > 0 else 1.20
+
     suggested_ratio = first_ratio * adjustment
-    
-    # Add randomization for retry attempts (helps escape local minima)
+
     if add_randomization:
-        # Add ±5% random variation
-        random_factor = random.uniform(0.95, 1.05)
-        suggested_ratio *= random_factor
-    
-    # Avoid ratios too close to previous first passes
+        suggested_ratio *= random.uniform(0.95, 1.05)
+
     for attempt in attempt_history:
         prev_first_ratio = attempt['first_pass'][0]
         if abs(suggested_ratio - prev_first_ratio) < 0.01:
             suggested_ratio += 0.02 if suggested_ratio > prev_first_ratio else -0.02
-    
-    # Sanity bounds
-    suggested_ratio = max(0.05, min(1.0, suggested_ratio))
-    
-    return suggested_ratio
+
+    return max(0.05, min(1.0, suggested_ratio))
 
 
 def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*1024):
@@ -232,10 +213,10 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
     current_ratio = base_ratio
     pass_num = 0
     previous_size = None
-    attempt_history = []  # Track full trajectory of each attempt
-    current_attempt_trajectory = []  # Track passes within current attempt
+    attempt_history = []
+    current_attempt_trajectory = []
     attempt_num = 0
-    first_pass_of_attempt = None  # Track first pass of current attempt
+    first_pass_of_attempt = None
 
     while True:
         pass_num += 1
@@ -247,38 +228,33 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
 
         print(f"Result: {final_size/1e6:.2f} MB | Target: {target_size/1e6:.2f} MB | Diff: {diff/1e6:+.2f} MB")
 
-        # Record this pass in current attempt trajectory
         current_attempt_trajectory.append((current_ratio, final_size))
-        
-        # Record first pass of this attempt
+
         if first_pass_of_attempt is None:
             first_pass_of_attempt = (current_ratio, final_size)
 
-        # Check for stagnation (if this isn't the first pass)
         if previous_size is not None:
             size_change = abs(final_size - previous_size)
-            
-            # If size changed less than 5MB between passes
+
             if size_change < 5 * 1024 * 1024:
                 print(f"⚠ Stagnant ({size_change/1e6:.2f}MB change between passes)")
-                
-                # Record this complete attempt
+
                 attempt_num += 1
+
                 attempt_history.append({
                     'first_pass': first_pass_of_attempt,
                     'final_pass': (current_ratio, final_size),
                     'trajectory': current_attempt_trajectory.copy()
                 })
-                
-                # If we're still far from target, we've hit a ceiling
+
                 if diff > 0 or abs(diff) > tolerance:
-                    print(f"✓ Attempt {attempt_num} stagnated at {final_size/1e6:.2f}MB")
-                    
-                    # Calculate suggested next ratio based on trajectory
-                    # Add randomization for attempts after the first to avoid repeating same pattern
-                    use_randomization = attempt_num > 1
-                    suggested_ratio = calculate_next_ratio(attempt_history, target_size, add_randomization=use_randomization)
-                    
+                    use_randomization = attempt_num >= 1
+                    suggested_ratio = calculate_next_ratio(
+                        attempt_history,
+                        target_size,
+                        add_randomization=use_randomization
+                    )
+
                     if suggested_ratio is None:
                         print("\n⚠ Compression attempts converging. Cannot get closer to target.")
                         user_retry = kdialog_yesno(
@@ -290,15 +266,14 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
                         if not user_retry:
                             print(f"\n✓ Keeping result: {final_size/1e6:.2f}MB")
                             return
-                        # User wants to try anyway, use fallback
+
                         suggested_ratio = first_pass_of_attempt[0] * (0.9 if diff > 0 else 1.1)
-                    
-                    # Show history and ask user
+
                     history_str = "\n".join(
                         f"  Attempt {i+1}: Started {a['first_pass'][1]/1e6:.2f}MB → Stagnated {a['final_pass'][1]/1e6:.2f}MB ({len(a['trajectory'])} passes)"
                         for i, a in enumerate(attempt_history)
                     )
-                    
+
                     user_retry = kdialog_yesno(
                         "Try Different Compression?",
                         f"Current result: {final_size/1e6:.2f}MB\n"
@@ -308,7 +283,7 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
                         f"Suggested starting ratio: {suggested_ratio:.4f}\n\n"
                         f"Try this ratio?"
                     )
-                    
+
                     if user_retry:
                         print(f"\n🔄 Starting new attempt with ratio {suggested_ratio:.4f}")
                         current_ratio = suggested_ratio
@@ -321,22 +296,17 @@ def dynamic_compress(cbz_files, output_folder, target_size, tolerance=50*1024*10
                         print(f"\n✓ Keeping result: {final_size/1e6:.2f}MB")
                         return
                 else:
-                    # Close enough to target
                     print("✓ Within tolerance. Done.")
                     return
 
-        # Accept only if at or below target, within tolerance
         if diff <= 0 and abs(diff) <= tolerance:
             print("✓ Within tolerance. Done.")
             return
 
-        # Save current size for next iteration
         previous_size = final_size
-        
-        # Dynamically adjust ratio based on how far off we are
         adjustment_factor = target_size / final_size
         current_ratio *= adjustment_factor
-        
+
         print(f"Adjusting ratio by {adjustment_factor:.4f}x → new ratio: {current_ratio:.4f}")
 
 
@@ -373,9 +343,8 @@ def main():
     total_size_mb = total_size_bytes / (1000 * 1000)
     total_size_gb = total_size_bytes / (1000 * 1000 * 1000)
 
-    # Calculate default target based on compression guide
     if total_size_mb <= 600:
-        default_target = str(int(total_size_mb))  # Don't compress
+        default_target = str(int(total_size_mb))
     elif total_size_mb <= 1500:
         default_target = "500"
     elif total_size_mb <= 2500:
@@ -395,12 +364,9 @@ def main():
     elif total_size_mb <= 9500:
         default_target = "4500"
     else:
-        default_target = str(int(total_size_mb * 0.5))  # 50% for very large files
+        default_target = str(int(total_size_mb * 0.5))
 
-    if total_size_mb >= 1000:
-        size_display = f"{total_size_gb:.2f} GB"
-    else:
-        size_display = f"{total_size_mb:.2f} MB"
+    size_display = f"{total_size_gb:.2f} GB" if total_size_mb >= 1000 else f"{total_size_mb:.2f} MB"
 
     target = kdialog_input(
         "Target Size",
@@ -421,7 +387,6 @@ def main():
 
     target_size_bytes = target_size_mb * 1000 * 1000
 
-    # Check if target is larger than original
     if target_size_bytes > total_size_bytes:
         print(f"\n⚠ Error: Target size ({target_size_mb:.2f} MB) is larger than original size ({total_size_mb:.2f} MB).")
         print("This script is only meant for compression (you wouldn't even get any extra quality).")
@@ -437,7 +402,6 @@ def main():
         tolerance=50 * 1024 * 1024
     )
 
-    # Copy non-CBZ files
     for file in Path(source_folder).iterdir():
         if file.is_file() and not file.name.endswith('.cbz'):
             shutil.copy2(file, output_folder / file.name)
