@@ -1,6 +1,8 @@
 ## 2026-05-08
 - Fixed logic error with stagnation
 - Added option to retry compression post-stagnation using different raitio, including some randomization so no two second (third, fourth, etc) attempts for the same set of cbz files will only yield a single result. This further decreases the chance of the script quitting due to stagnation where it should should hit the target size/window in theory
+- Fixed lgoic error with randomization
+- Script now compresses multiple .cbz files at once. Speed increase from this depends on CPU
 
 \* _This is probably not efficient, but it should effectively solve this issue. If I change how this part of the script works, it's likely because I found a faster way_
 
