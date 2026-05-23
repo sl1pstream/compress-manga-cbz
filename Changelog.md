@@ -1,3 +1,6 @@
+## 2026-05-22
+- Script now reads the original size via the zip metadata (this is why AI code sucks, kids. Learn to code. Seriously.)
+---
 ## 2026-05-08
 - Fixed logic error with stagnation
 - Added option to retry compression post-stagnation using different raitio, including some randomization so no two second (third, fourth, etc) attempts for the same set of cbz files will only yield a single result. This further decreases the chance of the script quitting due to stagnation where it should should hit the target size/window in theory
