@@ -84,12 +84,9 @@ def compute_total_image_size(cbz_files):
 
     for cbz in cbz_files:
         with zipfile.ZipFile(cbz, 'r') as z:
-            for name in z.namelist():
-                if name.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
-                    try:
-                        total += len(z.read(name))
-                    except:
-                        pass
+            for info in z.infolist():
+                if info.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                    total += info.file_size
     return total
 
 
