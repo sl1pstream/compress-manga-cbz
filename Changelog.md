@@ -1,3 +1,5 @@
+## 2026-11-19
+- Support for .cbz files containing .jxl files. **Needs `python-pillow-jpegxl-plugin` installed.**
 ## 2026-05-22
 - Script now reads the original size via the zip metadata (this is why AI code sucks, kids. Learn to code. Seriously.)
 ---
