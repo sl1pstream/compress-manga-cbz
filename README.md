@@ -13,6 +13,7 @@ You're not gonna notice that small loss in image quality unless you zoom in a to
 
 - **Linux** (might work with WSL/WSL2 but primarily tested on Linux)
 - `kdialog` for GUI dialogs (standard on KDE)
+- `python-pillow-jpegxl-plugin` for .jxl files
 
 ## Features
 
