@@ -8,6 +8,7 @@ import shutil
 import random
 from pathlib import Path
 from PIL import Image
+import pillow_jxl  # register JPEG XL support with Pillow
 import io
 from multiprocessing import Pool, cpu_count
 
@@ -22,6 +23,10 @@ from multiprocessing import Pool, cpu_count
 # ≤ 7.5GB: 3500MB
 # ≤ 8.5GB: 4096MB
 # ≤ 9.5GB: 4500MB
+# ≤ 10.5GB: 5120MB
+# ≤ 11.5GB: 5500MB
+# ≤ 12.5GB: 6144MB
+# ≤ 13.5GB: 6500MB
 
 
 # ---------------- UI ---------------- #
@@ -85,7 +90,7 @@ def compute_total_image_size(cbz_files):
     for cbz in cbz_files:
         with zipfile.ZipFile(cbz, 'r') as z:
             for info in z.infolist():
-                if info.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                if info.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.jxl')):
                     total += info.file_size
     return total
 
@@ -102,7 +107,7 @@ def compress_cbz_per_image(input_path, output_path, global_ratio):
                 except:
                     continue
 
-                if item.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                if item.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.jxl')):
                     try:
                         img = Image.open(io.BytesIO(data))
 
@@ -360,6 +365,14 @@ def main():
         default_target = "4096"
     elif total_size_mb <= 9500:
         default_target = "4500"
+    elif total_size_mb <= 10500:
+        default_target = "5120"
+    elif total_size_mb <= 11500:
+        default_target = "5500"
+    elif total_size_mb <= 12500:
+        default_target = "6144"
+    elif total_size_mb <= 13500:
+        default_target = "6500"
     else:
         default_target = str(int(total_size_mb * 0.5))
 
